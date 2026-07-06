@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import postgresManager from './database/postgres.manager.js';
 import redisManager from './database/redis.manager.js';
@@ -15,6 +16,7 @@ try {
 
   app.use(cors());
   app.use(express.json());
+  app.use(cookieParser(process.env.COOKIE_SECRET));
 
   app.use('/health', HealthRouter);
   app.use('/auth', AuthRouter);
