@@ -118,7 +118,7 @@ Para que esto funcione, cada access token lleva un campo `jti` (JWT ID) único e
 | `POST` | `/auth/login` | Verifica credenciales y emite token par | No |
 | `POST` | `/auth/refresh` | Rota el refresh token y emite nuevo access token | Cookie |
 | `POST` | `/auth/logout` | Invalida refresh token y añade access token a blacklist | Bearer + Cookie |
-| `GET` | `/auth/user` | Devuelve el usuario autenticado | Bearer |
+| `GET` | `/users/me` | Devuelve el usuario autenticado | Bearer |
 | `GET` | `/health` | Health check de Postgres y Redis | No |
 
 ### `POST /auth/register`
@@ -126,7 +126,7 @@ Para que esto funcione, cada access token lleva un campo `jti` (JWT ID) único e
 ```json
 // Request
 {
-  "username": "user@example.com",
+  "email": "user@example.com",
   "password": "Password123!"
 }
 
@@ -145,7 +145,7 @@ Para que esto funcione, cada access token lleva un campo `jti` (JWT ID) único e
 ```json
 // Request
 {
-  "username": "user@example.com",
+  "email": "user@example.com",
   "password": "Password123!"
 }
 
@@ -191,7 +191,7 @@ Cookie: refreshToken=<token>
 }
 ```
 
-### `GET /auth/user`
+### `GET /users/me`
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -327,12 +327,12 @@ POST http://localhost:3002/auth/login
 Content-Type: application/json
 
 {
-    "username": "user1@example.com",
+    "email": "user1@example.com",
     "password": "Password1!"
 }
 
 ### Me (con access token)
-GET http://localhost:3002/auth/user
+GET http://localhost:3002/users/me
 Authorization: Bearer {{login.response.body.accessToken}}
 
 ### Refresh (cookie enviada automáticamente)
@@ -340,7 +340,7 @@ Authorization: Bearer {{login.response.body.accessToken}}
 POST http://localhost:3002/auth/refresh
 
 ### Me (con nuevo access token)
-GET http://localhost:3002/auth/user
+GET http://localhost:3002/users/me
 Authorization: Bearer {{refresh.response.body.accessToken}}
 
 ### Logout
@@ -348,7 +348,7 @@ POST http://localhost:3002/auth/logout
 Authorization: Bearer {{login.response.body.accessToken}}
 
 ### Me tras logout (debe devolver 401 — token en blacklist)
-GET http://localhost:3002/auth/user
+GET http://localhost:3002/users/me
 Authorization: Bearer {{login.response.body.accessToken}}
 ```
 

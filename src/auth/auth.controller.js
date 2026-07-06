@@ -62,11 +62,52 @@ export default class AuthController {
   }
 
   static async logout(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+      if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided" });
+      }
 
+      // req.token viene del middleware requireAuth (el JWT decodificado)
+      await AuthService.logout(refreshToken, req.token);
+
+      res.clearCookie("refreshToken");
+      return res.status(200).json({ message: "Logout successful" });
+
+    } catch (error) {
+      console.error("Error during logout:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   }
 
   static async refresh(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+      if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided" });
+      }
 
+      const user = await AuthService.verifyRefreshToken(refreshToken);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid or expired refresh token" });
+      }
+
+      // Rotación: invalida el token viejo y emite un par nuevo
+      const { accessToken, refreshToken: newRefreshToken } = await AuthService.rotateTokenPair(refreshToken, user, req);
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 1000 * 60 * 60 * 24 * 7
+      });
+
+      return res.status(200).json({ accessToken });
+
+    } catch (error) {
+      console.error("Error during refresh:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   }
 
 }

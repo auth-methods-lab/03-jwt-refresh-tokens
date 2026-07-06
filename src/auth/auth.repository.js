@@ -1,9 +1,16 @@
 import postgresManager from "../database/postgres.manager.js";
+import redisManager from "../database/redis.manager.js";
+
 
 export default class AuthRepository {
 
   static async findUserByEmail(email) {
     const result = await postgresManager.sql`SELECT id,email,password_hash FROM users WHERE email = ${email}`;
+    return result[0] ?? null;
+  }
+
+  static async findUserById(userId) {
+    const result = await postgresManager.sql`SELECT id,email,password_hash FROM users WHERE id = ${userId}`;
     return result[0] ?? null;
   }
 
@@ -52,5 +59,10 @@ export default class AuthRepository {
       DELETE FROM refresh_tokens
       WHERE expires_at < NOW()
     `;
+  }
+
+  static async blacklistAccessToken(jti, ttl) {
+    if (ttl <= 0) return;
+    await redisManager.client.set(`blacklist:${jti}`, "1", { EX: ttl });
   }
 }

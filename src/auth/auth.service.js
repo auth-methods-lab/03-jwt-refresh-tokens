@@ -54,6 +54,33 @@ export default class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  static async logout(refreshToken, decodedAccessToken) {
+    const tokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+    await AuthRepository.deleteRefreshToken(tokenHash);
+
+    // Añadir access token a blacklist Redis hasta que expire
+    const ttl = decodedAccessToken.exp - Math.floor(Date.now() / 1000);
+
+    await AuthRepository.blacklistAccessToken(decodedAccessToken.jti, ttl);
+  }
+
+  static async verifyRefreshToken(refreshToken) {
+    const tokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+    const tokenRecord = await AuthRepository.findRefreshToken(tokenHash);
+    if (!tokenRecord) return null;
+
+    return AuthRepository.findUserById(tokenRecord.userId);
+  }
+
+  static async rotateTokenPair(oldRefreshToken, user, req) {
+    // Invalida el refresh token viejo
+    const oldHash = crypto.createHash("sha256").update(oldRefreshToken).digest("hex");
+    await AuthRepository.deleteRefreshToken(oldHash);
+
+    // Emite un par nuevo
+    return AuthService.createTokenPair(user, req);
+  }
 }
 
 // El problema: bcrypt trunca a 72 bytes

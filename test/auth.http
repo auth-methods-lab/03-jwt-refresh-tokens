@@ -1,19 +1,51 @@
-POST http://localhost:3000/auth/register
+@host = http://localhost:3000
+
+### Register
+POST {{host}}/auth/register
 Content-Type: application/json
 
 {
-	"email": "sample01@test.com",
-	"password": "Password1234!"
+  "email": "sample01@test.com",
+  "password": "Password1234!"
 }
 
-### login
-POST http://localhost:3000/auth/login
+###
+
+# @name login
+POST {{host}}/auth/login
 Content-Type: application/json
 
 {
-	"email": "sample01@test.com",
-	"password": "Password1234!"
+  "email": "sample01@test.com",
+  "password": "Password1234!"
 }
 
+###
 
-### logout
+# Rota el refresh token (la cookie la envía automáticamente REST Client)
+# @name refresh
+POST {{host}}/auth/refresh
+
+###
+
+### Logout
+POST {{host}}/auth/logout
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### User / Me
+GET {{host}}/users/me
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### User / Me (usando el nuevo access token tras el refresh)
+GET {{host}}/users/me
+Authorization: Bearer {{refresh.response.body.accessToken}}
+
+###
+
+### Debe devolver 401 después del logout (token en blacklist)
+GET {{host}}/users/me
+Authorization: Bearer {{login.response.body.accessToken}}
